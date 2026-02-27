@@ -8,20 +8,38 @@ A full-stack uptime monitoring application deployed on AWS using Terraform infra
 
 ## Tech Stack
 
-**Application:**
-- **Frontend:** React (Vite) served by Nginx
-- **Backend:** Node.js / Express REST API
-- **Database:** PostgreSQL
-- **Containerization:** Docker, Docker Compose (local dev)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React (Vite) served by Nginx |
+| Backend | Node.js / Express REST API |
+| Database | PostgreSQL |
+| Containerization | Docker, Docker Compose (local dev) |
+| Networking | VPC, Public/Private Subnets, Internet Gateway, NAT Gateway |
+| Compute | ECS on EC2 with Capacity Providers, Auto Scaling Group |
+| Load Balancing | Application Load Balancer with health checks |
+| Database (AWS) | RDS PostgreSQL (private subnet) |
+| Container Registry | ECR with lifecycle policies |
+| Monitoring | CloudWatch Logs |
+| Security | Security Groups (ALB → ECS → RDS), IAM Roles |
+| IaC | Terraform (10 config files, 35+ resources) |
 
-**AWS Infrastructure (Terraform):**
-- **Networking:** VPC, Public/Private Subnets, Internet Gateway, NAT Gateway, Route Tables
-- **Compute:** ECS on EC2 with Capacity Providers, Auto Scaling Group, Launch Template
-- **Load Balancing:** Application Load Balancer with health checks
-- **Database:** RDS PostgreSQL (private subnet)
-- **Container Registry:** ECR with lifecycle policies
-- **Monitoring:** CloudWatch Logs
-- **Security:** Security Groups (ALB → ECS → RDS chain), IAM Roles
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/ping` | Health check for ALB |
+| `GET` | `/monitors` | List all monitors with latest status |
+| `POST` | `/monitors` | Add a new monitor (name, url, interval) |
+| `DELETE` | `/monitors/:id` | Remove a monitor |
+| `GET` | `/checks/:monitorId` | Get check history and 24h uptime percentage |
+
+## Security Groups
+
+| Resource | Inbound Rule |
+|----------|-------------|
+| ALB | Port 80 from internet |
+| ECS | All ports from ALB security group only |
+| RDS | Port 5432 from ECS security group only |
 
 ## Project Structure
 
