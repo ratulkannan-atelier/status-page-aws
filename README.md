@@ -6,6 +6,22 @@ A full-stack uptime monitoring application deployed on AWS using Terraform infra
 
 ![AWS Architecture](AWS_Architecture_Status.png)
 
+### Design Decisions
+
+- **awsvpc network mode:** Each ECS task gets its own ENI for better security isolation. Containers within a task communicate via localhost.
+- **NAT Gateway:** Required for ECS tasks in private subnets to make outbound HTTP requests (uptime checks) to the internet.
+- **EC2 launch type over Fargate:** Demonstrates deeper understanding of ECS infrastructure (capacity providers, auto scaling groups, launch templates).
+- **Separate nginx configs:** `nginx.conf` for local Docker Compose (uses Docker DNS) and `nginx.ecs.conf` for ECS (uses localhost since containers share a network namespace).
+- **SSL connection to RDS:** PostgreSQL 15 requires encrypted connections. `sslmode=no-verify` enables encryption while trusting the AWS-managed certificate within the VPC.
+
+### Security Groups
+
+| Resource | Inbound Rule |
+|----------|-------------|
+| ALB | Port 80 from internet |
+| ECS | All ports from ALB security group only |
+| RDS | Port 5432 from ECS security group only |
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -32,14 +48,6 @@ A full-stack uptime monitoring application deployed on AWS using Terraform infra
 | `POST` | `/monitors` | Add a new monitor (name, url, interval) |
 | `DELETE` | `/monitors/:id` | Remove a monitor |
 | `GET` | `/checks/:monitorId` | Get check history and 24h uptime percentage |
-
-## Security Groups
-
-| Resource | Inbound Rule |
-|----------|-------------|
-| ALB | Port 80 from internet |
-| ECS | All ports from ALB security group only |
-| RDS | Port 5432 from ECS security group only |
 
 ## Project Structure
 
@@ -136,11 +144,3 @@ aws ecs update-service --cluster status_page-cluster --service status_ecs-servic
 ```bash
 terraform destroy -var="db_password=YourSecurePassword"
 ```
-
-## Key Design Decisions
-
-- **awsvpc network mode:** Each ECS task gets its own ENI for better security isolation. Containers within a task communicate via localhost.
-- **NAT Gateway:** Required for ECS tasks in private subnets to make outbound HTTP requests (uptime checks) to the internet.
-- **EC2 launch type over Fargate:** Demonstrates deeper understanding of ECS infrastructure (capacity providers, auto scaling groups, launch templates).
-- **Separate nginx configs:** `nginx.conf` for local Docker Compose (uses Docker DNS) and `nginx.ecs.conf` for ECS (uses localhost since containers share a network namespace).
-- **SSL connection to RDS:** PostgreSQL 15 requires encrypted connections. `sslmode=no-verify` enables encryption while trusting the AWS-managed certificate within the VPC.
